@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+if [ ${DEBUG} = 1 ]; then
+    set -x
+fi
+
+source $(dirname $0)/version
+
+cd $(dirname $0)/..
+
+mkdir -p bin
+if [ "$(uname)" = "Linux" ]; then
+    OTHER_LINKFLAGS="-extldflags -static -s"
+fi
+
+LINKFLAGS="-X github.com/rancher/rancher-sys-drift/pkg/version.Version=$VERSION"
+LINKFLAGS="-X github.com/rancher/rancher-sys-drift/pkg/version.GitCommit=$COMMIT $LINKFLAGS"
+CGO_ENABLED=0 go build -ldflags "$LINKFLAGS $OTHER_LINKFLAGS" -o bin/rancher-sys-drift
+
+if [ "$CROSS" = "true" ] && [ "$ARCH" = "amd64" ]; then
+    GOOS=darwin go build -ldflags "$LINKFLAGS" -o bin/rancher-sys-drift-darwin
+    GOOS=windows go build -ldflags "$LINKFLAGS" -o bin/rancher-sys-drift-windows
+fi
